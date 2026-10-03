@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -112,7 +112,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\glad\include;$(SolutionDir)Dependencies\glm</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\glad\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\imgui-1.92.9b\imgui-1.92.9b</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -134,7 +134,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\glad\include;$(SolutionDir)Dependencies\glm</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\glad\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\imgui-1.92.9b\imgui-1.92.9b</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,6 +153,8 @@
     <ClCompile Include="..\..\..\..\..\Downloads\imgui-1.92.9b\imgui-1.92.9b\imgui_draw.cpp" />
     <ClCompile Include="..\..\..\..\..\Downloads\imgui-1.92.9b\imgui-1.92.9b\imgui_tables.cpp" />
     <ClCompile Include="..\..\..\..\..\Downloads\imgui-1.92.9b\imgui-1.92.9b\imgui_widgets.cpp" />
+    <ClCompile Include="..\Dependencies\imgui-1.92.9b\imgui-1.92.9b\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\Dependencies\imgui-1.92.9b\imgui-1.92.9b\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\Dependencies\glad\src\glad.c" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Camera.cpp" />
@@ -160,9 +162,11 @@
     <ClCompile Include="InputProcesses.cpp" />
     <ClCompile Include="InstancedMesh.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="PanelGUI.cpp" />
     <ClCompile Include="ParticleSandbox.cpp" />
     <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="PhysicsWorld.cpp" />
+    <ClCompile Include="Reactor.cpp" />
     <ClCompile Include="Rectangle.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -191,6 +195,8 @@
     <ClInclude Include="InputProcesses.h" />
     <ClInclude Include="InstancedMesh.h" />
     <ClInclude Include="IRenderable.h" />
+    <ClInclude Include="PanelGUI.h" />
+    <ClInclude Include="Reactor.h" />
     <ClInclude Include="SPHKernels.h" />
     <ClInclude Include="Materials.h" />
     <ClInclude Include="Mesh.h" />

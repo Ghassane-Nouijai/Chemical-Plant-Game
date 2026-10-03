@@ -12,6 +12,7 @@
 
 class IRenderable;
 class Shader;
+class SphericalReactor;
 
 struct FluidParticle
 {
@@ -93,4 +94,19 @@ private:
     float m_Poly6Coefficient = 1.0f;
     float m_SpikyCoefficient = 1.0f;
     float m_ViscosityCoefficient = 0.0f;
+
+public:
+    void AddReactor(const std::shared_ptr<SphericalReactor>& reactor);
+    void ClearReactors();
+    void SetRunning(bool running) { m_Running = running; }
+    bool IsRunning() const { return m_Running; }
+    void AddParticle(const glm::vec3& position, const glm::vec3& velocity);
+    void EmitFromInlets(float dt, float particlesPerSecond, float speed);
+
+private:
+    void ResolveReactorCollisions(FluidParticle& particle);
+    std::vector<std::shared_ptr<SphericalReactor>> m_Reactors;
+    bool m_Running = false;
+    float m_EmissionCarry = 0.0f;
 };
+

@@ -6,6 +6,7 @@
 #include <numeric>
 #include <iostream>
 
+#include "Reactor.h"
 #include "IRenderable.h"
 #include "Sphere.h"
 #include "Shader.h"
@@ -273,6 +274,11 @@ void ParticleSandbox::Update(float deltaTime)
     m_Accumulator += deltaTime;
 
     int substeps = 0;
+
+    if (!m_Running)
+        return;
+    EmitFromInlets(deltaTime, 30.0f, 4.0f);
+
     while (m_Accumulator >= kFixedTimestep && substeps < kMaxSubsteps)
     {
         BuildNeighborGrid();
@@ -283,7 +289,7 @@ void ParticleSandbox::Update(float deltaTime)
             [this](std::size_t i)
             {
                 Integrate(m_Particles[i], kFixedTimestep);
-                ResolveBoxCollision(m_Particles[i]);
+                ResolveReactorCollisions(m_Particles[i]);
             });
 
         m_Accumulator -= kFixedTimestep;
@@ -402,4 +408,56 @@ void ParticleSandbox::PrintDebugInfo() const
     std::cout << "    specular = (" << m_Material.specular.x << ", " << m_Material.specular.y << ", " << m_Material.specular.z << ")\n";
     std::cout << "    isEmissive = " << (m_Material.isEmissive ? "true" : "false") << "\n";
     std::cout << "------------------------------\n";
+}
+
+void ParticleSandbox::AddReactor(const std::shared_ptr<SphericalReactor>& reactor)
+{
+    if (reactor)
+        m_Reactors.push_back(reactor);
+}
+
+void ParticleSandbox::ClearReactors()
+{
+    m_Reactors.clear();
+}
+
+void ParticleSandbox::AddParticle(const glm::vec3& position, const glm::vec3& velocity)
+{
+    FluidParticle p{};
+    p.position = position;
+    p.velocity = velocity;
+    p.acceleration = glm::vec3(0.0f);
+    p.density = m_RestDensity;
+    p.pressure = 0.0f;
+    p.mass = m_Particles.empty() ? 1.0f : m_Particles.front().mass;
+    p.radius = 0.1f;
+    m_Particles.push_back(p);
+    m_Indices.push_back(m_Particles.size() - 1);
+}
+
+void ParticleSandbox::EmitFromInlets(float dt, float particlesPerSecond, float speed)
+{
+    m_EmissionCarry += std::max(dt, 0.0f) * std::max(particlesPerSecond, 0.0f);
+    const int count = static_cast<int>(m_EmissionCarry);
+    m_EmissionCarry -= static_cast<float>(count);
+    if (m_Reactors.empty()) return;
+
+    for (const auto& reactor : m_Reactors)
+        for (const auto& inlet : reactor->inlets)
+            for (int i = 0; i < count; ++i)
+                AddParticle(reactor->SpawnPosition(inlet, 0.1f),
+                    reactor->SpawnVelocity(inlet, speed));
+}
+
+void ParticleSandbox::ResolveReactorCollisions(FluidParticle& particle)
+{
+    for (const auto& reactor : m_Reactors)
+    {
+        const ReactorCollision hit = reactor->CollideInside(particle.position, particle.radius);
+        if (!hit.collided) continue;
+        particle.position -= hit.normal * hit.penetration;
+        const float normalSpeed = glm::dot(particle.velocity, hit.normal);
+        if (normalSpeed > 0.0f)
+            particle.velocity -= (1.0f + m_Restitution) * normalSpeed * hit.normal;
+    }
 }

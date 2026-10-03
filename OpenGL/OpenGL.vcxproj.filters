@@ -49,6 +49,12 @@
     <Filter Include="Header Files\Simulation\Objecs">
       <UniqueIdentifier>{d50eba1b-21db-463b-ad36-830daa87e26d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\CPG Parts">
+      <UniqueIdentifier>{30230958-c0ad-4fdc-8df1-c7769d6b3bae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CPG GUI">
+      <UniqueIdentifier>{fb5944a7-dc7f-4c3b-a5a7-c371157d1536}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Dependencies\glad\src\glad.c">
@@ -119,6 +125,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\Downloads\imgui-1.92.9b\imgui-1.92.9b\imgui_widgets.cpp">
       <Filter>Source Files\Vendor\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Reactor.cpp">
+      <Filter>Header Files\CPG Parts</Filter>
+    </ClCompile>
+    <ClCompile Include="PanelGUI.cpp">
+      <Filter>Header Files\CPG GUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -228,6 +240,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\Downloads\imgui-1.92.9b\imgui-1.92.9b\imstb_rectpack.h">
       <Filter>Source Files\Vendor\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Reactor.h">
+      <Filter>Header Files\CPG Parts</Filter>
+    </ClInclude>
+    <ClInclude Include="PanelGUI.h">
+      <Filter>Header Files\CPG GUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -24,8 +24,13 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "InputProcesses.h"
-
+#include "PanelGUI.h"
 #include "ParticleSandbox.h"
+
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
 
 struct WindowConfig
 {
@@ -61,14 +66,28 @@ public:
 		while (!glfwWindowShouldClose(m_Window))
 		{
 			TickTime();
-			m_ParticleSandbox->Update(m_DeltaTime);
-			m_Input.processInput(m_Window, m_Camera, m_DeltaTime);
-			m_World.Update(m_DeltaTime * 10.0f);
-			Render();
-			glfwSwapBuffers(m_Window);
 			glfwPollEvents();
 
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+
+			m_PanelGUI.Draw(*m_ParticleSandbox);
+
+			ImGuiIO& io = ImGui::GetIO();
+			if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
+				m_Input.processInput(m_Window, m_Camera, m_DeltaTime);
+
+			m_ParticleSandbox->Update(m_DeltaTime);
+			m_World.Update(m_DeltaTime * 10.0f);
+
+			Render();
+
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 			// --- FPS counter (prints once per second) ---
+
 			++frameCount;
 			double now = glfwGetTime();
 			double elapsed = now - fpsTimer;
@@ -91,6 +110,8 @@ public:
 				frameCount = 0;
 				fpsTimer = now;
 			}
+
+			glfwSwapBuffers(m_Window);
 		}
 	}
 
@@ -113,7 +134,7 @@ private:
 		}
 
 		glfwMakeContextCurrent(m_Window);
-		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 		glfwSetWindowUserPointer(m_Window, this);
 		glfwSetFramebufferSizeCallback(m_Window, OnFramebufferResize);
@@ -126,6 +147,7 @@ private:
 		glEnable(GL_DEPTH_TEST);
 
 		RebuildProjection();
+		InitImGui();
 	}
 
 	void BuildScene()
@@ -198,8 +220,32 @@ private:
 
 	void Shutdown()
 	{
+		if (m_ImGuiInitialized)
+		{
+			ImGui_ImplOpenGL3_Shutdown();
+			ImGui_ImplGlfw_Shutdown();
+			ImGui::DestroyContext();
+			m_ImGuiInitialized = false;
+		}
+
 		glfwDestroyWindow(m_Window);
 		glfwTerminate();
+	}
+
+	void InitImGui()
+	{
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+
+		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+		ImGui::StyleColorsDark();
+
+		ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
+		ImGui_ImplOpenGL3_Init("#version 330");
+
+		m_ImGuiInitialized = true;
 	}
 
 	WindowConfig    m_Config;
@@ -218,6 +264,9 @@ private:
 	glm::vec3       m_LightColor{ 1.0f };
 
 	glm::mat4       m_Projection;
+
+	PanelGUI m_PanelGUI;
+	bool m_ImGuiInitialized = false;
 
 	float           m_DeltaTime = 0.0f;
 	float           m_LastFrame = 0.0f;
