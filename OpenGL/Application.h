@@ -48,11 +48,8 @@ public:
 		Init();
 
 		m_Shader.emplace("Material.shader");
-		// Separate shader for particles: the vertex stage reads per-instance
-		// position/scale/speed from vertex attributes instead of a per-draw
-		// 'model' uniform (see ParticleInstanced.shader).
 		m_ParticleShader.emplace("ParticleInstanced.shader");
-
+		m_ReactorSphere.emplace(1.0f, 64);
 		BuildScene();
 	}
 
@@ -66,6 +63,7 @@ public:
 		while (!glfwWindowShouldClose(m_Window))
 		{
 			TickTime();
+			HandleModeToggle();
 			glfwPollEvents();
 
 			ImGui_ImplOpenGL3_NewFrame();
@@ -81,12 +79,15 @@ public:
 			m_ParticleSandbox->Update(m_DeltaTime);
 			m_World.Update(m_DeltaTime * 10.0f);
 
+			if (m_CameraMode && !io.WantCaptureKeyboard && !io.WantCaptureMouse)
+				m_Input.processInput(m_Window, m_Camera, m_DeltaTime);
+
 			Render();
 
 			ImGui::Render();
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-			// --- FPS counter (prints once per second) ---
+			// --- FPS counter ---
 
 			++frameCount;
 			double now = glfwGetTime();
@@ -134,7 +135,11 @@ private:
 		}
 
 		glfwMakeContextCurrent(m_Window);
-		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		
+		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		m_Input.SetEnabled(true);
+		
+		// glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 		glfwSetWindowUserPointer(m_Window, this);
 		glfwSetFramebufferSizeCallback(m_Window, OnFramebufferResize);
@@ -189,6 +194,7 @@ private:
 		m_Shader->SetUniformMat4("projection", m_Projection);
 		m_Shader->SetUniformMat4("view", m_Camera.GetViewMatrix());
 		m_Scene.Draw(*m_Shader);
+		DrawReactors();
 
 		m_ParticleShader->Bind();
 		m_ParticleShader->SetUniform3fv("u_ViewPos", m_Camera.Position);
@@ -232,6 +238,54 @@ private:
 		glfwTerminate();
 	}
 
+	void HandleModeToggle()
+	{
+		const bool tabDown = glfwGetKey(m_Window, GLFW_KEY_TAB) == GLFW_PRESS;
+		if (tabDown && !m_TabWasDown)
+		{
+			m_CameraMode = !m_CameraMode;
+			glfwSetInputMode(m_Window, GLFW_CURSOR,
+				m_CameraMode ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+			m_Input.SetEnabled(m_CameraMode);
+			m_Input.ResetMouse();
+		}
+		m_TabWasDown = tabDown;
+	}
+
+	void DrawReactors()
+	{
+		if (!m_ReactorSphere)
+			return;
+
+		for (const auto& reactor : m_PanelGUI.GetReactors())
+		{
+			if (reactor->showInside)
+			{
+				m_Shader->SetUniform3fv("u_Material.ambient", glm::vec3(0.03f));
+				m_Shader->SetUniform3fv("u_Material.diffuse", glm::vec3(0.08f, 0.12f, 0.18f));
+				m_Shader->SetUniform3fv("u_Material.specular", glm::vec3(0.15f));
+				m_Shader->SetUniform3fv("u_Material.emissive", glm::vec3(0.0f));
+				m_Shader->SetUniform1f("u_Material.shininess", 8.0f);
+				m_Shader->SetUniform1i("u_Material.isEmissive", 0);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				m_ReactorSphere->DrawScaled(*m_Shader, reactor->position,
+					reactor->orientation, reactor->radius * 0.995f);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
+			else
+			{
+				m_Shader->SetUniform3fv("u_Material.ambient", glm::vec3(0.12f, 0.14f, 0.17f));
+				m_Shader->SetUniform3fv("u_Material.diffuse", glm::vec3(0.42f, 0.48f, 0.56f));
+				m_Shader->SetUniform3fv("u_Material.specular", glm::vec3(0.95f));
+				m_Shader->SetUniform3fv("u_Material.emissive", glm::vec3(0.0f));
+				m_Shader->SetUniform1f("u_Material.shininess", 96.0f);
+				m_Shader->SetUniform1i("u_Material.isEmissive", 0);
+				m_ReactorSphere->DrawScaled(*m_Shader, reactor->position,
+					reactor->orientation, reactor->radius);
+			}
+		}
+	}
+
 	void InitImGui()
 	{
 		IMGUI_CHECKVERSION();
@@ -267,6 +321,10 @@ private:
 
 	PanelGUI m_PanelGUI;
 	bool m_ImGuiInitialized = false;
+
+	std::optional<Sphere> m_ReactorSphere;
+	bool m_CameraMode = true;
+	bool m_TabWasDown = false;
 
 	float           m_DeltaTime = 0.0f;
 	float           m_LastFrame = 0.0f;

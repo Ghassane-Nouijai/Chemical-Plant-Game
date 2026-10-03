@@ -4,6 +4,8 @@
 #include <vector>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "Renderer.h"
 #include "VertexBuffer.h"
@@ -127,4 +129,20 @@ void Sphere::DrawInstanced(Shader& shader)
 		return;
 
 	m_InstancedMesh->Draw(m_IndexCount);
+}
+void Sphere::DrawScaled(Shader& shader,
+	const glm::vec3& position,
+	const glm::quat& orientation,
+	float scale)
+{
+	const glm::mat4 model = glm::translate(glm::mat4(1.0f), position) *
+		glm::mat4_cast(orientation) *
+		glm::scale(glm::mat4(1.0f), glm::vec3(scale));
+
+	shader.SetUniformMat4("model", model);
+	m_Mesh->Bind();
+	glDrawElements(GL_TRIANGLES,
+		static_cast<GLsizei>(m_Mesh->GetCount()),
+		GL_UNSIGNED_INT,
+		nullptr);
 }

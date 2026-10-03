@@ -12,6 +12,7 @@ struct ReactorPort
     float angle = 0.0f;
     float axialLength = 0.35f;
     bool inlet = true;
+    bool open = true;
 };
 
 struct ReactorCollision
@@ -31,14 +32,14 @@ public:
     glm::quat orientation{ 1.0f, 0.0f, 0.0f, 0.0f };
     float radius = 5.0f;
     bool showInside = false;
+    bool showSpecifications = false;
     std::string name = "Spherical reactor";
     std::vector<ReactorPort> inlets;
     std::vector<ReactorPort> outlets;
 
     glm::vec3 WorldDirection(const ReactorPort& port) const;
     glm::vec3 WorldPortCenter(const ReactorPort& port) const;
-    ReactorCollision CollideInside(const glm::vec3& particlePosition,
-        float particleRadius) const;
+    ReactorCollision CollideInside(const glm::vec3& particlePosition, float particleRadius) const;
     glm::vec3 SpawnPosition(const ReactorPort& port, float particleRadius) const;
     glm::vec3 SpawnVelocity(const ReactorPort& port, float speed) const;
     bool IsInside(const glm::vec3& p, float margin = 0.0f) const;

@@ -7,14 +7,21 @@
 
 SphericalReactor::SphericalReactor(float r) : radius(std::max(r, 0.1f))
 {
-    inlets.push_back(ReactorPort{ glm::vec3(0.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.35f, true });
-    outlets.push_back(ReactorPort{ glm::vec3(0.0f, 1.0f, 0.0f), 1.0f, 0.0f, 0.35f, false });
+    ReactorPort inlet;
+    inlet.localDirection = glm::vec3(0.0f, -1.0f, 0.0f);
+    inlet.inlet = true;
+    inlets.push_back(inlet);
+
+    ReactorPort outlet;
+    outlet.localDirection = glm::vec3(0.0f, 1.0f, 0.0f);
+    outlet.inlet = false;
+    outlets.push_back(outlet);
 }
 
 glm::vec3 SphericalReactor::SafeNormalize(const glm::vec3& v)
 {
     const float len2 = glm::dot(v, v);
-    return len2 > 1e-8f ? v * (1.0f / std::sqrt(len2)) : glm::vec3(0.0f, 1.0f, 0.0f);
+    return len2 > 1e-8f ? v / std::sqrt(len2) : glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
 glm::vec3 SphericalReactor::WorldDirection(const ReactorPort& port) const
@@ -38,8 +45,11 @@ bool SphericalReactor::IsOpening(const glm::vec3& localPoint, float particleRadi
 
     auto matches = [&](const ReactorPort& port)
         {
-            const glm::vec3 d = SafeNormalize(port.localDirection);
-            const float angularDistance = std::acos(std::clamp(glm::dot(radial, d), -1.0f, 1.0f));
+            if (!port.open)
+                return false;
+
+            const glm::vec3 direction = SafeNormalize(port.localDirection);
+            const float angularDistance = std::acos(std::clamp(glm::dot(radial, direction), -1.0f, 1.0f));
             const float openingAngle = std::atan2(port.diameter * 0.5f, std::max(radius, 0.001f));
             return angularDistance <= openingAngle + rimTolerance / std::max(radius, 0.001f);
         };
@@ -62,20 +72,19 @@ ReactorCollision SphericalReactor::CollideInside(const glm::vec3& particlePositi
         return {};
 
     ReactorCollision result;
-    result.collided = true;
     result.throughOpening = IsOpening(local, particleRadius);
-    result.normal = distance > 1e-6f ? glm::normalize(particlePosition - position) : glm::vec3(0.0f, 1.0f, 0.0f);
+    result.normal = distance > 1e-6f
+        ? glm::normalize(particlePosition - position)
+        : glm::vec3(0.0f, 1.0f, 0.0f);
     result.penetration = distance - limit;
-
-    if (result.throughOpening)
-        result.collided = false;
+    result.collided = !result.throughOpening;
     return result;
 }
 
 glm::vec3 SphericalReactor::SpawnPosition(const ReactorPort& port, float particleRadius) const
 {
-    const glm::vec3 d = WorldDirection(port);
-    return WorldPortCenter(port) - d * (particleRadius + port.axialLength * 0.5f);
+    const glm::vec3 direction = WorldDirection(port);
+    return WorldPortCenter(port) - direction * (particleRadius + port.axialLength * 0.5f);
 }
 
 glm::vec3 SphericalReactor::SpawnVelocity(const ReactorPort& port, float speed) const
@@ -96,13 +105,26 @@ std::string SphericalReactor::Specifications() const
     out << "Position: (" << position.x << ", " << position.y << ", " << position.z << ")\n";
     out << "Radius: " << radius << "\n";
     out << "Inlets: " << inlets.size() << "  Outlets: " << outlets.size() << "\n";
+
     for (std::size_t i = 0; i < inlets.size(); ++i)
-        out << "Inlet " << i << " diameter=" << inlets[i].diameter << " direction=("
-        << inlets[i].localDirection.x << ", " << inlets[i].localDirection.y << ", "
-        << inlets[i].localDirection.z << ")\n";
+    {
+        const auto& p = inlets[i];
+        out << "Inlet " << i << " open=" << (p.open ? "yes" : "no")
+            << " diameter=" << p.diameter
+            << " angle=" << p.angle << " direction=("
+            << p.localDirection.x << ", " << p.localDirection.y << ", "
+            << p.localDirection.z << ")\n";
+    }
+
     for (std::size_t i = 0; i < outlets.size(); ++i)
-        out << "Outlet " << i << " diameter=" << outlets[i].diameter << " direction=("
-        << outlets[i].localDirection.x << ", " << outlets[i].localDirection.y << ", "
-        << outlets[i].localDirection.z << ")\n";
+    {
+        const auto& p = outlets[i];
+        out << "Outlet " << i << " open=" << (p.open ? "yes" : "no")
+            << " diameter=" << p.diameter
+            << " angle=" << p.angle << " direction=("
+            << p.localDirection.x << ", " << p.localDirection.y << ", "
+            << p.localDirection.z << ")\n";
+    }
+
     return out.str();
 }
